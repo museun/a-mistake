@@ -1,0 +1,22 @@
+[package]
+name = "a-mistake"
+version = "0.1.0"
+authors = ["museun <museun@outlook.com>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4.6"
+simplelog = "0.5.3"
+
+serde = "1.0.82"
+serde_derive = "1.0.82"
+serde_json = "1.0.33"
+
+rand = "0.6.1"
+regex = "1.1.0"
+indexmap = "1.0.2"
+chrono = "0.4.6"
+curl = "0.4.19"
+
+[target.'cfg(windows)'.dependencies]
+miow = "0.3.3" 
