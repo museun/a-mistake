@@ -8,6 +8,7 @@ mod util;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::Duration;
@@ -87,8 +88,6 @@ impl UserMap {
 }
 
 type PlaylistRef = Arc<RwLock<cache::Playlist>>;
-
-use std::rc::Rc;
 
 struct Bot {
     cache: cache::Cache,
@@ -381,6 +380,8 @@ fn main() {
         }
         // wait for the file to start
         control.wait_for_ready().unwrap();
+
+        // song is playing here
 
         // wait for the file to end
         control.wait_for_end().unwrap();

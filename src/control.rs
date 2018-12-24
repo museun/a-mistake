@@ -81,6 +81,7 @@ impl Control {
     pub fn duration(&mut self) -> Result<f64> {
         self.get("duration")
     }
+
     pub fn check_playing(&mut self) -> bool {
         match self.title() {
             Err(Error::NotPlaying) | Err(..) => false,
