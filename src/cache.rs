@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use log::*;
 use rand::prelude::*;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::util;
 

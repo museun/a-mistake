@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{self, prelude::*, BufRead, BufReader, BufWriter};
+use std::io::{self, prelude::*, BufRead, BufReader};
 
 use indexmap::IndexSet;
-use rand::prelude::*;
-use serde_derive::{Deserialize, Serialize};
-use serde_json::Value;
-
 use log::*;
+use rand::prelude::*;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -24,7 +23,7 @@ impl From<io::Error> for Error {
 
 pub struct Client {
     reader: BufReader<File>,
-    writer: BufWriter<File>,
+    writer: File,
 
     events: IndexSet<Event>,
     buf: HashMap<u8, Value>, // XXX LRU eviction might be a good idea
@@ -32,7 +31,7 @@ pub struct Client {
 
 impl Client {
     pub fn new(fi: File) -> Self {
-        let writer = BufWriter::new(fi.try_clone().unwrap());
+        let writer = fi.try_clone().unwrap();
         let reader = BufReader::new(fi);
         Self {
             writer,
@@ -82,30 +81,35 @@ impl Client {
         let mut buf = String::new();
         loop {
             self.reader.read_line(&mut buf)?;
-            if let Ok(val) = serde_json::from_str::<Value>(&buf) {
-                if let Some(req) = val
-                    .get("request_id")
-                    .and_then(|req| req.as_u64())
-                    .map(|d| d as u8)
-                {
-                    if let Some(id) = id {
-                        if req == id {
-                            return Ok(serde_json::from_value(val).unwrap());
-                        }
+            let val = match serde_json::from_str::<Value>(&buf) {
+                Ok(val) => val,
+                Err(..) => continue,
+            };
+
+            if let Some(req) = val
+                .get("request_id")
+                .and_then(|req| req.as_u64())
+                .map(|d| d as u8)
+            {
+                match id {
+                    Some(id) if id == req => {
+                        return Ok(serde_json::from_value(val).unwrap());
                     }
-                    self.buf.insert(req, val);
-                } else if let Some(ev) = Event::try_from_value(&val) {
-                    trace!("event: {:?}", ev);
-                    self.events.insert(ev);
-                    if id.is_none() {
-                        return Ok(Response {
-                            data: None,
-                            error: "".into(),
-                            request_id: 0,
-                        });
-                    }
+                    _ => {}
+                };
+                self.buf.insert(req, val);
+            } else if let Some(ev) = Event::try_from_value(&val) {
+                trace!("event: {:?}", ev);
+                self.events.insert(ev);
+                if id.is_none() {
+                    return Ok(Response {
+                        data: None,
+                        error: "".into(),
+                        request_id: 0,
+                    });
                 }
             }
+
             buf.clear();
         }
     }
@@ -153,7 +157,6 @@ impl Event {
                 } else {
                     Reason::Unknown
                 };
-
                 Event::EndFileReason(reason)
             }
             "file-loaded" => Event::FileLoaded,

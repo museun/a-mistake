@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 use std::time::{Duration, SystemTime};
 
-use serde_derive::Deserialize;
-
 use log::*;
+use serde::Deserialize;
 
 pub fn place_commas(n: u64) -> String {
     fn commas(n: u64, s: &mut String) {
