@@ -139,7 +139,11 @@ pub fn get_usernames(ids: impl IntoIterator<Item = u64>) -> Option<Vec<(u64, Str
                 body.extend_from_slice(&data);
                 Ok(data.len())
             })
-            .unwrap();
+            .map_err(|err| {
+                warn!("could get user names from twitch: {}", err);
+                err
+            })
+            .ok()?;
 
         transfer
             .perform()
